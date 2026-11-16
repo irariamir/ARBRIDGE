@@ -3,7 +3,7 @@ import { createRoot } from 'react-dom/client';
 import './style.css';
 
 type Job = { id: string; title: string; status: string; sourceHost: string; createdAt: string; bytes?: number; fileType?: string; error?: string };
-type Account = { telegramUserId: number; connected: boolean; subscriptionActive: boolean; subscription: { planId: string; expiresAt: string } | null };
+type Account = { telegramUserId: number; connected: boolean };
 const API_BASE = 'http://127.0.0.1:8787';
 
 async function getToken() { return (await chrome.storage.local.get('sessionToken') as { sessionToken?: string }).sessionToken; }
@@ -55,7 +55,7 @@ function SidePanel() {
       const data = await response.json() as { accessToken?: string; error?: string };
       if (!response.ok || !data.accessToken) throw new Error(data.error || 'The confirmation code could not be verified.');
       await chrome.storage.local.set({ sessionToken: data.accessToken });
-      setPairId(''); setConnectCode(''); setConfirmCode(''); setMessage('Telegram connected. Choose a subscription in the bot to enable transfers.');
+      setPairId(''); setConnectCode(''); setConfirmCode(''); setMessage('Telegram connected. You can now send public file links to this chat.');
       await refresh();
     } catch (error) { setMessage(error instanceof Error ? error.message : 'The code could not be verified.'); }
     finally { setBusy(false); }
@@ -68,23 +68,23 @@ function SidePanel() {
   async function setCurrentPage() {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
     if (!tab?.url || !/^https:\/\//i.test(tab.url)) return setMessage('Only a public HTTPS page URL can be selected.');
-    setUrl(tab.url); setMessage('Page URL added. Page contents are not captured by this prototype.');
+    setUrl(tab.url); setMessage('Page URL added. The server will try to download the file at this URL.');
   }
   async function submit(event: React.FormEvent) {
     event.preventDefault(); setBusy(true); setMessage('');
     const result = await chrome.runtime.sendMessage({ type: 'capture', url, title: document.title }) as { ok: boolean; error?: string };
     setBusy(false);
-    if (result?.ok) { setUrl(''); setMessage('Transfer queued. Check Recent transfers for server-side download and Telegram delivery status.'); void refresh(); }
+    if (result?.ok) { setUrl(''); setMessage('Transfer queued. Check Recent transfers or your Telegram chat.'); void refresh(); }
     else setMessage(result?.error || 'The request could not be completed.');
   }
 
   return <main>
     <header><a className="brand" href="#top">ARBRIDGE</a><span className="byline">BY ARIAMIR</span></header>
     <section className="intro" id="top"><p className="eyebrow">BROWSER → TELEGRAM</p><h1>Keep the<br /><em>useful things.</em></h1><p className="lede">Send a public document link from Chrome to your paired Telegram chat.</p></section>
-    <section className="connect-block"><div className="section-head"><h2>Telegram account</h2><button className="text-button" onClick={() => void refresh()}>Refresh</button></div>{account ? <><p className="connected"><span aria-hidden="true">●</span> Connected · Telegram ID {account.telegramUserId}</p><p className="hint">{account.subscriptionActive && account.subscription ? `Plan active until ${new Date(account.subscription.expiresAt).toLocaleDateString('en-US')}.` : 'A subscription is required before file transfers.'}</p>{!account.subscriptionActive && botUrl && <a className="inline-link" target="_blank" rel="noreferrer" href={`${botUrl}?start=subscribe`}>Open the bot to view plans ↗</a>}<button className="outline-button" onClick={() => void disconnect()}>Disconnect this browser</button></> : <><p className="hint">Pair securely through the bot. The bot sends a one-time confirmation code back to you.</p>{!pairId ? <button onClick={() => void beginPairing()} disabled={busy}>Connect Telegram</button> : <><p className="step-label">1 · Open Telegram and send this command</p>{botUrl && <a className="inline-link" target="_blank" rel="noreferrer" href={botUrl}>Open the official ARBRIDGE bot ↗</a>}<code className="pair-code">/connect {connectCode}</code><form onSubmit={confirmPairing}><label htmlFor="confirm">2 · Enter the code the bot sent you</label><input id="confirm" inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength={6} value={confirmCode} onChange={(event) => setConfirmCode(event.target.value)} placeholder="Six-digit code" required /><button disabled={busy || confirmCode.length !== 6}>{busy ? 'Verifying…' : 'Confirm connection'}</button></form></>}</>}{message && <p role="status" className="feedback">{message}</p>}</section>
-    <form onSubmit={submit} className="capture-form"><div className="section-head"><h2>Send a file link</h2><button className="text-button" type="button" onClick={() => void setCurrentPage()}>Use current page URL</button></div><label htmlFor="url">Public HTTPS file link</label><input id="url" type="url" inputMode="url" placeholder="https://example.com/document.pdf" value={url} onChange={(event) => setUrl(event.target.value)} required /><button disabled={busy || !account || !account.subscriptionActive}>{busy ? 'Sending request…' : !account ? 'Connect Telegram first' : !account.subscriptionActive ? 'Subscribe to enable transfers' : 'Send to paired Telegram'}</button><p className="hint">The server fetches the public URL directly. Login-protected sources may fail. The original file is sent to Telegram; AI processing and a persistent library are not included yet.</p></form>
-    <section className="library"><div className="section-head"><h2>Recent transfers</h2><button className="text-button" onClick={() => void refresh()}>Refresh</button></div>{jobs.length === 0 ? <p className="empty">Delivered files will appear here.<br />Use “Send to ARBRIDGE” when you right-click a document link.</p> : <ul>{jobs.map((job) => <li key={job.id}><span className="status-mark" aria-hidden="true" /> <div className="job-copy"><strong>{job.title}</strong><small>{job.sourceHost} · {job.fileType || job.status}</small>{job.error && <small className="error">{job.error}</small>}</div><span className="status">{job.status}</span></li>)}</ul>}</section>
-    <footer>Development preview · Requests are temporarily stored in memory</footer>
+    <section className="connect-block"><div className="section-head"><h2>Telegram account</h2><button className="text-button" onClick={() => void refresh()}>Refresh</button></div>{account ? <><p className="connected"><span aria-hidden="true">●</span> Connected · Telegram ID {account.telegramUserId}</p><button className="outline-button" onClick={() => void disconnect()}>Disconnect this browser</button></> : <><p className="hint">Pair securely through the bot using a short-lived, one-time code.</p>{!pairId ? <button onClick={() => void beginPairing()} disabled={busy}>Connect Telegram</button> : <><p className="step-label">1 · Open Telegram and send this command</p>{botUrl && <a className="inline-link" target="_blank" rel="noreferrer" href={botUrl}>Open the official ARBRIDGE bot ↗</a>}<code className="pair-code">/connect {connectCode}</code><form onSubmit={confirmPairing}><label htmlFor="confirm">2 · Enter the code the bot sent you</label><input id="confirm" inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength={6} value={confirmCode} onChange={(event) => setConfirmCode(event.target.value)} placeholder="Six-digit code" required /><button disabled={busy || confirmCode.length !== 6}>{busy ? 'Verifying…' : 'Confirm connection'}</button></form></>}</>}{message && <p role="status" className="feedback">{message}</p>}</section>
+    <form onSubmit={submit} className="capture-form"><div className="section-head"><h2>Send a file link</h2><button className="text-button" type="button" onClick={() => void setCurrentPage()}>Use current page URL</button></div><label htmlFor="url">Public HTTPS file link</label><input id="url" type="url" inputMode="url" placeholder="https://example.com/document.pdf" value={url} onChange={(event) => setUrl(event.target.value)} required /><button disabled={busy || !account}>{busy ? 'Sending request…' : !account ? 'Connect Telegram first' : 'Send to paired Telegram'}</button><p className="hint">The server downloads the public link and sends the validated file to your Telegram chat. Login-protected sources are not supported.</p></form>
+    <section className="library"><div className="section-head"><h2>Recent transfers</h2><button className="text-button" onClick={() => void refresh()}>Refresh</button></div>{jobs.length === 0 ? <p className="empty">Delivered files will appear here.<br />You can also right-click a document link and choose “Send to ARBRIDGE”.</p> : <ul>{jobs.map((job) => <li key={job.id}><span className="status-mark" aria-hidden="true" /> <div className="job-copy"><strong>{job.title}</strong><small>{job.sourceHost} · {job.fileType || job.status}</small>{job.error && <small className="error">{job.error}</small>}</div><span className="status">{job.status}</span></li>)}</ul>}</section>
+    <footer>Simple transfer mode · Temporary transfer history</footer>
   </main>;
 }
 
