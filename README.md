@@ -18,9 +18,15 @@
 
 ---
 
-ARBRIDGE explores a careful way to send a **public document link** from a Chrome extension to a paired Telegram account. The server fetches the file and can deliver it to the user's private Telegram chat after pairing and manual subscription approval.
+## What ARBRIDGE is
 
-> **Prototype, not a hosted service.** Pairings, sessions, receipts, subscriptions, and capture jobs exist in process memory and are lost when the API restarts. Example prices are not an offer. The Chrome and Telegram flows have not received live end-to-end testing. Do not use this prototype with sensitive material or expose it to the public internet.
+ARBRIDGE (the **Browser-to-Telegram Document Workspace**) is an open-source prototype by ARIAMIR for moving a document that is publicly available on the web into a user's private Telegram chat. Its goal is to make that handoff simple while keeping the download on a controlled server rather than uploading a local Downloads-folder file from the browser.
+
+A user starts in the Chrome extension, submits a public HTTPS link, and pairs the extension with a Telegram account using a short-lived, two-step code exchange. The Fastify API validates the URL and each redirect, checks that network targets are public, downloads the file within configured limits, and checks its content signature. For a paired account with an active subscription, the API can send the validated file to that account's Telegram private chat. The grammY bot handles pairing, sample plans, status commands, receipt submission, and reviewer responses; an operator can also review receipts through the protected admin page.
+
+ARBRIDGE does **not** download local files, reuse browser login cookies, bypass access controls, provide a permanent searchable library, or connect an AI service. Receipt review is manual and is not automatic verification of payment. The present implementation is a development prototype—not a hosted service or a production-ready document manager.
+
+> **Important limitations:** Pairings, sessions, receipts, subscriptions, and capture jobs exist in process memory and are lost when the API restarts. Example prices are not an offer. Chrome and Telegram flows have not received live end-to-end testing. Do not use this prototype with sensitive material or expose it to the public internet.
 
 ## Current capabilities
 
