@@ -1,27 +1,27 @@
-# Architecture overview
+# ARBRIDGE architecture
+
+ARBRIDGE has three runtime parts:
+
+1. **Chrome extension** — accepts a public HTTPS file URL from the side panel or link context menu and sends it to the local API with a paired session token.
+2. **Fastify API** — manages short-lived pairing, validates user sessions, downloads public files with SSRF protections and size/time limits, checks file signatures, and sends the validated document to Telegram.
+3. **grammY Telegram bot** — exchanges one-time pairing codes and provides private-chat transfer status commands.
+
+## Transfer flow
 
 ```text
-Chrome MV3 side panel/context menu
-       │ one-time pairing + bearer session
-       │ public URL + title (only for active subscribers)
-       ▼
-Fastify API · default bind 127.0.0.1
-       ├── pairing/session service (volatile memory)
-       ├── manual subscription + receipt state (volatile memory)
-       ├── SSRF-aware bounded HTTPS download
-       ├── temporary capture jobs
-       ├── Telegram sendDocument to verified private chat
-       └── Basic-auth operator page /admin
-                  ▲                         │
-                  │ shared internal secret  │ approve/reject
-                  ▼                         ▼
-             grammY bot ─────────── private Telegram review group
+Chrome extension
+      |
+      | HTTPS URL + session token
+      v
+Local Fastify API ---- DNS/IP + redirect validation
+      |                           |
+      |                    bounded temporary download
+      v
+Telegram Bot API ---- sendDocument ----> Paired private chat
 ```
 
-The two processes share volatile state through authenticated internal HTTP routes guarded by `INTERNAL_API_SECRET`. Pairing codes are one-time, short-lived and limited to five confirmation attempts. The browser receives a random bearer token only after the bot-mediated confirmation step. Telegram numeric user ID and private chat ID—not usernames—are associated with the session.
+## State and security
 
-Sample plans are `$4.99/month` and `$49.99/year`; these are illustrative. The payment path is disabled unless the operator supplies instructions, bot token, private review group, a 32+ character internal secret and an allowlist of Telegram numeric reviewer IDs. Receipts are copied to the group with action buttons; manual approval/rejection updates subscription status and notifies the user. No payment processor or automatic bank verification is implemented.
+Pairings, sessions, duplicate-capture markers, and job status are held in process memory. They are cleared on API restart. The internal API secret protects bot-to-API routes. Browser sessions are opaque bearer tokens stored hashed in API memory and expire after 30 days. The downloader only accepts public HTTPS targets on port 443, checks every redirect, enforces download limits, and validates supported file signatures.
 
-## Not yet connected
-
-PostgreSQL/Drizzle schema and migrations, Redis/BullMQ, object storage, durable sessions/jobs, safe document extraction, OCR/AI adapters, embeddings/search, deletion synchronization and deployment infrastructure are not wired into the running API. Restarting the API clears users' in-flight pairings, sessions, receipts, subscriptions and job history. Do not describe the architecture diagram as a production deployment.
+This prototype has no payment/subscription system, receipt review, admin payment panel, database, persistent library, or AI services. It is intended for local testing only; do not expose the API publicly.
