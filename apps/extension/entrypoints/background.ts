@@ -1,3 +1,5 @@
+import { defineBackground } from 'wxt/utils/define-background';
+
 const API_BASE = 'http://127.0.0.1:8787';
 
 type CaptureRequest = { type: 'capture'; url: string; title?: string };
