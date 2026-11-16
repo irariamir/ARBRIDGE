@@ -59,6 +59,7 @@ bot.callbackQuery('show:connect', async (ctx) => {
 bot.callbackQuery('show:help', async (ctx) => { await ctx.answerCallbackQuery(); await ctx.reply(userHelp()); });
 
 bot.command('status', async (ctx) => {
+  if (!isPrivate(ctx)) return ctx.reply('For privacy, file status is available only in your private chat with ARBRIDGE.');
   if (!ctx.from) return;
   try {
     const result = await api<{ documents: Array<{ title: string; sourceHost: string; fileType?: string }> }>(`/internal/library/${ctx.from.id}`, { internal: true });
@@ -68,6 +69,7 @@ bot.command('status', async (ctx) => {
   } catch { await ctx.reply('Transfer status is temporarily unavailable.'); }
 });
 bot.command('library', async (ctx) => {
+  if (!isPrivate(ctx)) return ctx.reply('For privacy, your file list is available only in your private chat with ARBRIDGE.');
   if (!ctx.from) return;
   try {
     const result = await api<{ documents: Array<{ title: string; sourceHost: string; fileType?: string }> }>(`/internal/library/${ctx.from.id}`, { internal: true });
