@@ -1,11 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { unavailableCommandReplies } from './messages.js';
+import { formatTransferStatus } from './messages.js';
 
-describe('bot command contract', () => {
-  it('has an honest response for each unavailable command', () => {
-    expect(Object.keys(unavailableCommandReplies)).toEqual(['library', 'search', 'settings', 'account', 'status', 'delete']);
-    expect(unavailableCommandReplies.account).toMatch(/not enabled/i);
-    expect(unavailableCommandReplies.library).toMatch(/not connected/i);
-    expect(unavailableCommandReplies.delete).toMatch(/unavailable/i);
+describe('transfer status formatting', () => {
+  it('shows the delivered file name, type, and source host', () => {
+    expect(formatTransferStatus({ title: 'notes.pdf', fileType: 'pdf', sourceHost: 'example.org' }))
+      .toBe('• notes.pdf — pdf · example.org');
+  });
+  it('uses a generic type when the file type is missing', () => {
+    expect(formatTransferStatus({ title: 'notes', sourceHost: 'example.org' }))
+      .toBe('• notes — file · example.org');
   });
 });
