@@ -30,7 +30,10 @@ function internalAuthorized(request: FastifyRequest) {
   return internalSecret.length >= 32 && typeof supplied === 'string' && safeEqual(supplied, internalSecret);
 }
 async function requireInternal(request: FastifyRequest, reply: FastifyReply) {
-  if (!internalAuthorized(request)) return reply.code(401).send({ error: 'Unauthorized internal service request.' });
+  if (!internalAuthorized(request)) {
+    await reply.code(401).send({ error: 'Unauthorized internal service request.' });
+    return;
+  }
 }
 function bearer(request: FastifyRequest) {
   const match = /^Bearer ([A-Za-z0-9_-]{32,128})$/.exec(request.headers.authorization ?? '');
