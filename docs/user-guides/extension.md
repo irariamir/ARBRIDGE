@@ -1,9 +1,13 @@
-# Chrome extension and Telegram activation (development)
+# Chrome extension and Telegram transfer setup
 
-Build with `npm run build --workspace @arbridge/extension`, then load `apps/extension/.output/chrome-mv3` unpacked using Chrome's extension manager. The extension currently points to `http://127.0.0.1:8787`; configure the API's `EXTENSION_ORIGIN` to the exact unpacked extension ID if CORS blocks it.
+Build with `npm run build --workspace @arbridge/extension`, then load `apps/extension/.output/chrome-mv3` unpacked using Chrome's extension manager.
 
-Start the API and configured grammY bot in separate terminals. In the side panel, click **Connect Telegram**, open the operator-configured bot, press Start, and send `/connect <extension code>`. Enter the second one-time code that the bot replies with. This establishes a temporary bearer session. `/subscribe` shows example prices; the operator must configure file transfer before a receipt can be submitted. An authorized reviewer must approve the proof before the API accepts a capture.
+Copy `.env.example` to `.env` at the repository root. Configure the Telegram bot token, bot username, and shared internal API secret. After loading the extension, copy its Chrome extension ID into `EXTENSION_ORIGIN=chrome-extension://YOUR_EXTENSION_ID`, then restart the API.
 
-Right-click a public HTTPS document link and choose **Send to ARBRIDGE**. The server downloads the source URL and sends the validated original file through the Bot API to the paired private chat. The browser does not upload a local download. Login-protected sources may fail. Chrome's context menu is unavailable on protected pages such as `chrome://downloads`.
+Start the API and Telegram bot in separate terminals. In the side panel, click **Connect Telegram**, open your bot's private chat, press Start, and send `/connect <extension code>`. Enter the second one-time code returned by the bot. The resulting browser session expires after 30 days; restarting the API clears sessions and pairing state.
 
-Pairing, sessions, transfer status, pairing status and job history are volatile; restarting the API resets them. The sample ZIP is a local development build, not a signed Chrome Web Store package. Never use the prototype with sensitive material or expose the API publicly.
+Paste a public HTTPS file URL into the extension, or right-click a document link and choose **Send to ARBRIDGE**. The server downloads the public file, checks its destination, size, and file signature, then sends it to your paired private Telegram chat.
+
+Supported file types are PDF, ZIP, PNG, JPEG, GIF, WebP, and plain text. The default maximum file size is 20 MB. Browser cookies are not forwarded, so login-protected sources may fail. Files are not stored in a permanent ARBRIDGE library; transfer history is temporary and clears when the API restarts.
+
+No subscription, payment, receipt, deposit channel, or reviewer group is required. Keep the API bound to localhost while testing. Never commit `.env` or expose bot credentials and the internal API secret.
