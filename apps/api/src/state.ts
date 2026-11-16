@@ -1,4 +1,4 @@
-import { createHash } from 'node:crypto';
+import { timingSafeEqual } from 'node:crypto';
 import { PairingService } from './pairings.js';
 
 export type CaptureJob = {
