@@ -10,7 +10,14 @@ header { display:flex; align-items:center; gap:10px; padding: 18px 0; border-bot
 h1 { font-size:36px; line-height:1.02; letter-spacing:-.06em; margin:0 0 14px; }
 h1 em { color:var(--color-green); font-style:normal; }
 .lede { color:var(--color-ink-muted); margin:0; }
-.capture-form { border-top:2px solid var(--color-ink); border-bottom:1px solid var(--color-line); padding:18px 0; }
+.connect-block { border-top:2px solid var(--color-ink); border-bottom:1px solid var(--color-line); padding:16px 0 18px; }
+.connected { color:var(--color-green); font-size:13px; font-weight:650; margin:12px 0 4px; }
+.step-label { font-size:12px; font-weight:650; margin:13px 0 5px; }
+.inline-link { display:inline-block; color:var(--color-green); font-weight:650; font-size:12px; text-underline-offset:3px; margin:4px 0 10px; }
+.pair-code { display:block; padding:10px; background:var(--color-green-soft); border-left:2px solid var(--color-green); font:600 13px var(--font-mono); overflow-wrap:anywhere; margin:9px 0 12px; }
+.outline-button { background:transparent; color:var(--color-ink); border-color:var(--color-line); }
+.outline-button:hover { background:#f0f0f0; }
+.capture-form { border-top:2px solid var(--color-ink); border-bottom:1px solid var(--color-line); padding:18px 0; margin-top:18px; }
 label { display:block; font-weight:650; margin-bottom:7px; }
 input { width:100%; min-height:42px; border:1px solid #898989; border-radius:var(--radius-control); padding:9px 10px; background:white; color:var(--color-ink); font:inherit; }
 input:focus-visible,button:focus-visible,a:focus-visible { outline:var(--focus-outline); outline-offset:2px; }

@@ -1,0 +1,37 @@
+name: Feature request
+description: Propose a user-focused improvement or maintainer workflow.
+title: "feature: "
+labels: [enhancement, needs-triage]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ARBRIDGE is an early prototype. Please distinguish current behavior from proposed work. Do not include confidential content or credentials.
+  - type: textarea
+    id: problem
+    attributes:
+      label: User or maintainer problem
+      description: Who experiences the problem, and what is difficult today?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed change
+      description: Describe the smallest useful change and alternatives considered.
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence and impact
+      description: Link public, verifiable examples, user feedback, or an issue. Do not invent adoption metrics.
+    validations:
+      required: false
+  - type: textarea
+    id: risks
+    attributes:
+      label: Security, privacy, and limitations
+      description: Note data exposure, permissions, operational needs, and acceptance criteria.
+    validations:
+      required: true

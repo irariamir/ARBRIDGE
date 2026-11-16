@@ -79,8 +79,18 @@ type DownloadOptions = {
   onProgress?: (received: number, total?: number) => void;
 };
 const REDIRECTS = new Set([301, 302, 303, 307, 308]);
+export function contentDispositionFilename(header: string | undefined): string | undefined {
+  if (!header) return undefined;
+  const extended = /(?:^|;)\s*filename\*\s*=\s*UTF-8''([^;]+)/i.exec(header)?.[1];
+  if (extended) {
+    try { return decodeURIComponent(extended.trim().replace(/^"|"$/g, '')); } catch { return undefined; }
+  }
+  const quoted = /(?:^|;)\s*filename\s*=\s*"([^"]*)"/i.exec(header)?.[1];
+  const plain = quoted ?? /(?:^|;)\s*filename\s*=\s*([^;]+)/i.exec(header)?.[1];
+  return plain?.trim().replace(/^"|"$/g, '');
+}
 
-async function requestHop(url: URL, options: DownloadOptions, hops: number): Promise<{ path: string; bytes: number; contentType: string; finalUrl: string }> {
+async function requestHop(url: URL, options: DownloadOptions, hops: number): Promise<{ path: string; bytes: number; contentType: string; contentDisposition?: string; finalUrl: string }> {
   const addresses = await resolvePublic(url.hostname.replace(/^\[|\]$/g, ''));
   return new Promise((resolve, reject) => {
     let settled = false;
@@ -136,7 +146,7 @@ async function requestHop(url: URL, options: DownloadOptions, hops: number): Pro
           await pipeline(response, createWriteStream(path, { flags: 'wx', mode: 0o600 }));
           if (settled) { await rm(directory, { recursive: true, force: true }); return; }
           settled = true;
-          resolve({ path, bytes, contentType, finalUrl: url.toString() });
+          resolve({ path, bytes, contentType, contentDisposition: response.headers['content-disposition'], finalUrl: url.toString() });
         } catch (error) {
           await rm(directory, { recursive: true, force: true });
           finishError(error instanceof Error ? error : new Error('Download failed.'));
@@ -181,5 +191,5 @@ export async function downloadPublicFile(input: string, options: DownloadOptions
     await rm(join(result.path, '..'), { recursive: true, force: true });
     throw new DownloadError('The downloaded content is not a supported document type.', 'UNSUPPORTED_FILE');
   }
-  return { ...result, type, cleanup: () => rm(join(result.path, '..'), { recursive: true, force: true }) };
+  return { ...result, type, fileName: contentDispositionFilename(result.contentDisposition), cleanup: () => rm(join(result.path, '..'), { recursive: true, force: true }) };
 }
