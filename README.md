@@ -1,71 +1,139 @@
+<div align="center">
+
+<img src="apps/website/public/favicon.svg" width="72" height="72" alt="ARBRIDGE mark">
+
 # ARBRIDGE
 
 **Your digital workspace, connected everywhere.**
 
-ARBRIDGE is an ARIAMIR product concept for moving public web documents into a Telegram-connected personal library. The current repository is an early, security-conscious engineering foundation—not a claim that every planned integration is production-ready.
+*A public-link capture prototype by ARIAMIR — from Chrome to a Telegram chat you control.*
 
-## What is here
+[![CI](https://github.com/irariamir/ARBRIDGE/actions/workflows/ci.yml/badge.svg?branch=arena%2F1e3bd786-arbridge)](https://github.com/irariamir/ARBRIDGE/actions/workflows/ci.yml)
+![Status: Prototype](https://img.shields.io/badge/status-prototype-orange)
+![Node.js 22+](https://img.shields.io/badge/Node.js-22%2B-339933)
 
-- `apps/extension`: WXT + React Chrome Manifest V3 side panel, Telegram pairing UI, and a right-click menu for public file links.
-- `apps/api`: Fastify capture, short-lived two-code pairing, bearer sessions, sample-plan access gate, Telegram document delivery, and protected receipt-review admin endpoints.
-- `packages/download-engine`: HTTPS-only download worker primitive with redirect-by-redirect DNS/IP checks, size/time limits, and basic file signature validation.
-- `apps/telegram-bot`: grammY commands for pairing, sample plans, incoming payment receipts, reviewer-group approve/reject buttons, status, and recent deliveries.
-- `apps/api/admin.html`: Basic-auth protected operator page for temporary payment-review queue and service overview.
-- `apps/website`: English-first responsive product and documentation pages with per-page SEO metadata.
-- `docs/`: design, security, development, billing, and operating notes.
+[Get started](#quick-start) · [What works](#current-capabilities) · [Architecture](#how-it-fits-together) · [Security](#security-and-privacy) · [Packages](#packages-and-workspaces) · [Releases](#releases-and-downloads)
 
-The pairing, subscriptions, receipt queue, sessions, and jobs are held in process memory and are cleared by an API restart. The included draft SQL schema is not connected. Example USD prices are illustrative, not a live offer; payment collection remains disabled until the operator configures private payment instructions, a review group, numeric reviewer IDs, bot token, and a strong internal secret. There is no payment processor, persistent document store, AI extraction/search, or production deployment. The extension sends the original public URL to the server; it does not upload local downloads or bypass authenticated sites.
+</div>
 
-## Requirements
+---
 
-Node.js 22.13+ and npm 10+. Copy `.env.example` to `.env` for server development. Keep real credentials out of source control and chat.
+ARBRIDGE explores a careful way to send a **public document link** from a Chrome extension to a paired Telegram account. The server fetches the file and can deliver it to the user's private Telegram chat after pairing and manual subscription approval.
 
-```sh
-npm install
-npm run typecheck
-npm test
-npm run dev:api
+> **Prototype, not a hosted service.** Pairings, sessions, receipts, subscriptions, and capture jobs exist in process memory and are lost when the API restarts. Example prices are not an offer. The Chrome and Telegram flows have not received live end-to-end testing. Do not use this prototype with sensitive material or expose it to the public internet.
+
+## Current capabilities
+
+- **Chrome MV3 extension:** side panel, pairing and transfer-status interface, and a context-menu action for public links.
+- **Two-step Telegram pairing:** short-lived, single-use codes establish a temporary browser session with the Telegram account.
+- **Bounded server-side downloads:** HTTPS-only public URL fetching, redirect-by-redirect DNS/IP checks, pinned addresses, size/time/redirect limits, file-signature checks, and temporary-file cleanup.
+- **Telegram bot:** pairing, `/subscribe`, `/status`, `/library`, help and account commands; receipt intake and private reviewer-group approve/reject controls when configured.
+- **Operator review page:** `/admin` with Basic authentication and the same manual receipt-review decisions.
+- **Subscription gate:** sample plans are shown as **$4.99/month** and **$49.99/year**. These are illustrative values; payment collection is disabled until the operator configures the private review workflow.
+
+### Not implemented / not production-ready
+
+There is no connected database, persistent document library, payment processor, automatic payment verification, AI extraction/search, production deployment, or durable audit log. Manual receipt approval is not proof of payment: a reviewer must independently verify funds. The downloader does not use browser cookies, bypass login, or upload files from the local Downloads folder.
+
+## How it fits together
+
+```mermaid
+flowchart LR
+    Chrome[Chrome extension] -->|public HTTPS URL, active account| API[Fastify API]
+    Bot[Telegram bot] <-->|pairing, plans, receipts| API
+    API --> Fetch[SSRF-aware bounded downloader]
+    Fetch -->|validated temporary file| Telegram[Paired private Telegram chat]
+    Admin[Operator page /admin] -->|Basic-auth review| API
+    API -. volatile records .-> Memory[(Process memory)]
+    Review[Private Telegram review group] <-->|approve / reject| Bot
 ```
 
-The API defaults to `http://127.0.0.1:8787`. Website preview: `npm run dev:web` (port 5173). For Telegram integration, start the API and bot in separate terminals with the same local `.env` values: `npm run dev:api` and `npm run dev:bot`.
+## Quick start
 
-### Connect and activate
+### Requirements
 
-1. Build and load the unpacked extension (steps below), then choose **Connect Telegram**.
-2. Start the configured bot in Telegram. Send the short-lived `/connect 123456` code displayed by the extension.
-3. The bot replies with a second one-time confirmation code. Enter that code in the extension within five minutes.
-4. Use `/subscribe` in the bot to view **example-only** prices ($4.99 monthly / $49.99 annual). Payments are disabled until an operator securely configures payment instructions, the bot token, a private review group, an internal secret, and authorized numeric reviewer IDs.
-5. If manual payment review is enabled, send a receipt photo or PDF to the bot. The private group gets the proof and **Approve / Reject** buttons. Approval activates the sample subscription; rejection leaves access disabled.
-6. The extension only starts transfers for a paired account with an active subscription. It downloads a public HTTPS link server-side and sends the original file to that paired Telegram chat.
+- Node.js **22.13+** and npm **10+**.
+- Chrome for loading the unpacked extension.
+- A Telegram bot and private review group only if testing the bot-integrated flow. Use a fresh token stored in `.env`; never reuse a token exposed in chat or commit credentials.
 
-The operator page is `/admin` on the local API. It requires a non-default username and a unique password of at least 24 characters. Use it only behind HTTPS if deployed; do not expose the development API to the public internet.
+### Install and verify
 
-### Extension
+```sh
+npm ci
+npm run lint
+npm run typecheck
+npm test
+npm run build
+```
+
+### Run locally
+
+1. Copy `.env.example` to `.env`. Keep it private and configure only credentials you control. The API can start without a bot token; the Telegram-integrated flow cannot.
+2. In one terminal, run `npm run dev:api` (default API: `http://127.0.0.1:8787`).
+3. If using Telegram, configure the same secure internal secret in the API and bot, plus the bot username/token, private review group ID, and authorized **numeric** reviewer IDs. Start the bot in a second terminal with `npm run dev:bot`.
+4. To preview the website, run `npm run dev:web` in another terminal.
+5. Configure `ADMIN_USERNAME` and a unique `ADMIN_PASSWORD` of at least 24 characters before using `/admin`. Keep the API private; any deployed admin interface requires HTTPS.
+
+See [the operator guide](docs/user-guides/subscriptions-admin.md) for the configuration and receipt-review details. No live Telegram message or payment request is sent by the tests.
+
+### Build and load the Chrome extension
 
 ```sh
 npm run build --workspace @arbridge/extension
 ```
 
-Load the generated unpacked build from `apps/extension/.output/chrome-mv3` via `chrome://extensions` → Developer mode → Load unpacked. A deployed API URL and matching extension origin must be configured before capture requests work. Chrome's context menus are unavailable on protected pages such as `chrome://downloads`.
+In Chrome, open `chrome://extensions`, enable Developer mode, choose **Load unpacked**, and select `apps/extension/.output/chrome-mv3`. The development build targets the local API address. If CORS blocks the extension, set `EXTENSION_ORIGIN` to that exact unpacked extension origin and restart the API. Chrome-protected pages such as `chrome://downloads` cannot provide context-menu entries.
 
-## Security posture and limitations
+### Pair and transfer
 
-URL fetching is restricted to HTTPS and public DNS results, validates every redirect destination, pins each request to an inspected address, and applies timeout, redirect-count, byte, and file-signature checks. Pairing codes are single-use and expire after five minutes; extension sessions expire after 30 days. However, pairings, access sessions, receipts, subscriptions, and jobs are stored only in process memory. Manual receipt approval is not payment verification by a payment processor. These controls are a development baseline—not production security. Do not expose the API or admin panel publicly until durable storage, rate limits, isolated workers, TLS, malware scanning, payment controls, and a full security review are in place.
+1. Open the extension side panel and choose **Connect Telegram**.
+2. Open the configured bot in Telegram and send the short-lived `/connect <code>` shown by the extension.
+3. Enter the bot's second confirmation code in the extension within five minutes.
+4. In the bot, use `/subscribe` to view sample plans. If an operator has enabled manual receipt review, submit a supported receipt and wait for an authorized reviewer to verify the payment and decide.
+5. With an active subscription, submit a public HTTPS document link. The API downloads and validates the file, then sends it to the paired private Telegram chat.
 
-See [Security](SECURITY.md), [development notes](docs/development/README.md), and [release status](CHANGELOG.md).
+## Packages and workspaces
 
-## Product and brand
+These are **monorepo workspaces**, not published npm or GitHub Packages. Their `0.1.0` manifest versions are development package versions, not release promises.
 
-Product: **ARBRIDGE** · Company: **ARIAMIR** · Website: [ariamir.ct.ws](https://ariamir.ct.ws). The ARIAMIR reference brand package informs the green/charcoal palette and restrained, utility-first visual direction. Product UI and documentation are in English.
+| Workspace | Responsibility | Published? |
+|---|---|---|
+| `apps/extension` (`@arbridge/extension`) | WXT + React Chrome Manifest V3 extension | No |
+| `apps/api` (`@arbridge/api`) | Fastify API, pairing, temporary sessions/jobs, subscription and review endpoints | No |
+| `apps/telegram-bot` (`@arbridge/telegram-bot`) | grammY bot and reviewer controls | No |
+| `apps/website` (`@arbridge/website`) | Static product and documentation website | No |
+| `packages/download-engine` (`@arbridge/download-engine`) | Bounded HTTPS downloader and public-address validation | No; internal workspace |
+| `packages/shared` (`@arbridge/shared`) | Shared types and illustrative plan catalog | No; internal workspace |
 
-## Open-source maintainer program note
+## Releases and downloads
 
-OpenAI's [Codex for Open Source program](https://developers.openai.com/community/codex-for-oss) offers selected maintainers six months of ChatGPT Pro with Codex and may offer other benefits; applying does not guarantee selection. ARBRIDGE is currently a small, early prototype with no stars or verified usage metrics, so its fit is uncertain. See [the checked program criteria and honest application notes](docs/OPENAI_CODEX_FOR_OSS.md). No application has been submitted and no endorsement or eligibility is implied.
+**There is no published GitHub Release, npm package, GitHub Package, or Chrome Web Store listing yet.** Follow [GitHub Releases](https://github.com/irariamir/ARBRIDGE/releases) for actual published versions; do not treat the internal `0.1.0` workspace versions as releases.
 
-## License
+The repository contains `artifacts/arbridge-extension-unpacked.zip` as a **local development build**. Extract it and load the included `chrome-mv3` directory through Chrome's extension manager. It targets local development and is not signed, a Chrome Web Store package, or a production release. Build the extension from source instead if you need the current workspace contents.
 
-MIT. See [LICENSE](LICENSE).
+## Security and privacy
 
-## Development build artifact
+The downloader restricts requests to HTTPS and checked public DNS addresses, validates every redirect target, pins requests to inspected addresses, and applies byte, time, and redirect limits plus file-signature checks. These controls are a prototype baseline, not a complete production security system.
 
-A ready-to-load unpacked Chrome MV3 build is provided as `artifacts/arbridge-extension-unpacked.zip`. Extract it and load the extracted `chrome-mv3` directory from Chrome's extension manager. It targets the local development API address and is not a Chrome Web Store package or production-ready release.
+- Do not submit private documents, secret-bearing URLs, or material you are not authorized to share.
+- Do not use this service to bypass authentication; browser cookies are not forwarded.
+- Pairings, bearer sessions, receipts, subscriptions, and jobs are volatile and are cleared on API restart.
+- A receipt is reviewed manually; no payment processor or automated verification is connected.
+- Keep bot tokens, internal secrets, and admin credentials out of source control, logs, and chat. Revoke any token that has been exposed.
+- Do not expose the API or admin page publicly. Rate limiting, durable account isolation, malware scanning, production worker isolation, persistent storage, and an independent security review are still needed.
+
+Read [SECURITY.md](SECURITY.md) and the [URL-fetching security notes](docs/security/URL_FETCHING.md) before changing network-facing code. Report vulnerabilities privately as described in [SECURITY.md](SECURITY.md).
+
+## Verification status
+
+The current development branch passes CI for lint, typecheck, unit tests, dependency audit, and workspace builds. The latest local suite has **19 passing tests**. This does **not** verify Chrome UI installation, a live Telegram bot, reviewer callbacks, or an end-to-end transfer. The external downloader smoke test was blocked by the sandbox TLS trust chain; certificate validation was not disabled. Details are in [the verification record](docs/TESTING.md).
+
+## Contributing
+
+Start with [CONTRIBUTING.md](CONTRIBUTING.md), [development status](docs/development/README.md), and the [architecture overview](docs/architecture/OVERVIEW.md). Please report only reproducible behavior and genuine usage or adoption evidence; do not fabricate metrics, testimonials, or integrations.
+
+## Project and maintainers
+
+**Product:** ARBRIDGE · **Company:** ARIAMIR · **Website:** [ariamir.ct.ws](https://ariamir.ct.ws) · **License:** [MIT](LICENSE)
+
+OpenAI maintains a separate [Codex for Open Source program](https://developers.openai.com/community/codex-for-oss). Selection and any benefits are determined by OpenAI and are not guaranteed. See [the factual program notes](docs/OPENAI_CODEX_FOR_OSS.md); no application or endorsement is implied.
