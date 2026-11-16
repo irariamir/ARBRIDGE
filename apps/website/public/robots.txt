@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://ariamir.ct.ws/arbridge/sitemap.xml

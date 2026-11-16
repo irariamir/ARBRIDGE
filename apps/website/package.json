@@ -1,0 +1,1 @@
+{"name":"@arbridge/website","version":"0.1.0","private":true,"type":"module","scripts":{"dev":"vite --host 0.0.0.0","build":"vite build","typecheck":"node -e \"console.log('Static website: no TypeScript source')\""},"devDependencies":{"vite":"^6.2.5"}}

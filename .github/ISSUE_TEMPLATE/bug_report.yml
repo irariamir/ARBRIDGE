@@ -1,0 +1,44 @@
+name: Bug report
+description: Report a reproducible issue in the ARBRIDGE prototype.
+title: "bug: "
+labels: [bug, needs-triage]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Do not include passwords, bot tokens, private document URLs, receipts, or personal data. This project is a development prototype; do not post security vulnerabilities publicly—see SECURITY.md.
+  - type: textarea
+    id: summary
+    attributes:
+      label: What happened?
+      description: A concise description of the problem.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      description: Include the smallest repeatable set of steps. Redact sensitive values.
+      placeholder: "1. Start the API with placeholder configuration…\n2. Open the extension…\n3. Observe…"
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected and actual behavior
+    validations:
+      required: true
+  - type: input
+    id: versions
+    attributes:
+      label: Environment
+      description: OS, Node.js version, Chrome version (if relevant), and commit or release.
+    validations:
+      required: true
+  - type: textarea
+    id: checks
+    attributes:
+      label: Logs or checks
+      description: Include relevant sanitized output and the checks you ran. Remove credentials, full URLs with secrets, and personal data.
+    validations:
+      required: false
