@@ -34,9 +34,9 @@ export default defineBackground(() => {
         body: JSON.stringify({ url: url.toString(), title: message.title?.slice(0, 240) })
       });
       const data = await response.json() as { id?: string; status?: string; duplicate?: boolean; error?: string };
-      if (!response.ok || !data.id) return notify(response.status === 402 ? 'Subscription required' : 'Link not sent', data.error || 'The server could not accept this link.');
+      if (!response.ok || !data.id) return notify('Link not sent', data.error || 'The server could not accept this link.');
       await chrome.storage.local.set({ [`job:${data.id}`]: { id: data.id, title: message.title || url.pathname.split('/').pop() || url.hostname, status: data.status || 'queued', sourceHost: url.hostname, createdAt: new Date().toISOString() } });
-      return notify(data.duplicate ? 'Already sent' : 'Transfer queued', data.duplicate ? 'This link was recently sent; the existing transfer status is shown in the extension.' : 'The server will download the public file and send it to your paired Telegram chat.', data.id);
+      return notify(data.duplicate ? 'Already sent' : 'Transfer queued', data.duplicate ? 'This link was recently sent; its existing transfer status is shown in the extension.' : 'The server will download the public file and send it to your paired Telegram chat.', data.id);
     } catch {
       return notify('Could not reach ARBRIDGE', 'Start the ARBRIDGE API and try again.');
     }
@@ -44,7 +44,7 @@ export default defineBackground(() => {
 
   function notify(title: string, message: string, id?: string): { ok: boolean; id?: string; error?: string } {
     chrome.notifications.create({ type: 'basic', iconUrl: '/icon/128.png', title, message });
-    const failed = ['Link not sent', 'Could not reach ARBRIDGE', 'Connect Telegram first', 'Subscription required'].includes(title);
+    const failed = ['Link not sent', 'Could not reach ARBRIDGE', 'Connect Telegram first'].includes(title);
     return { ok: !failed, ...(id ? { id } : {}), ...(failed ? { error: message } : {}) };
   }
 });
