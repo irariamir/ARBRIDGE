@@ -1,0 +1,2 @@
+import { defineConfig } from 'vite';
+export default defineConfig({ server: { host: '0.0.0.0', allowedHosts: ['.e2b.app', 'localhost', '127.0.0.1'] }, preview: { host: '0.0.0.0', allowedHosts: ['.e2b.app', 'localhost', '127.0.0.1'] }, build: { rollupOptions: { input: ['index.html', 'features.html', 'how-it-works.html', 'extension.html', 'telegram.html', 'privacy.html', 'terms.html', 'security.html', 'faq.html', 'contact.html', 'docs.html'] } } });

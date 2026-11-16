@@ -1,0 +1,1 @@
+066884cdd15742a7cfa9e594446c2b203cf470dc232059e7575da8956a7b9d31  artifacts/arbridge-extension-unpacked.zip

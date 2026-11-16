@@ -1,0 +1,24 @@
+{
+  "name": "arbridge",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "ARBRIDGE by ARIAMIR — a browser-to-Telegram document workspace",
+  "workspaces": ["apps/api", "apps/extension", "apps/telegram-bot", "apps/website", "packages/*"],
+  "scripts": {
+    "lint": "eslint apps/website/scripts/*.mjs eslint.config.js",
+    "dev:api": "npm --workspace @arbridge/api run dev",
+    "dev:bot": "npm --workspace @arbridge/telegram-bot run dev",
+    "dev:web": "npm --workspace @arbridge/website run dev",
+    "build": "npm run build --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present"
+  },
+  "engines": { "node": ">=22.13" },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.15.0",
+    "globals": "^16.5.0"
+  },
+  "overrides": { "minimatch": "^11.0.8" }
+}
